@@ -7,7 +7,6 @@ import json
 import pathlib
 import re
 import socket
-import tempfile
 from contextlib import contextmanager
 from textwrap import wrap
 
@@ -41,37 +40,6 @@ def build_url(host, port=443, scheme="https://"):
     if not re.search(r":\d+", host):
         url = "{url}:{port}".format(url=url, port=port)
     return url
-
-
-def test_cert(host, port=443, timeout=5, **kwargs):
-    """Test that a cert is valid on a site.
-
-    Args:
-        host (:obj:`str`):
-            hostname to connect to.
-            can be any of: "scheme://host:port", "scheme://host", or "host".
-        port (:obj:`str`, optional):
-            port to connect to on host.
-            If no :PORT in host, this will be added to host.
-            Defaults to: 443
-        timeout (:obj:`str`, optional):
-            Timeout for connect/response.
-            Defaults to: 5.
-        kwargs: passed thru to requests.get()
-
-    Returns:
-        (:obj:`tuple` of (:obj:`bool`, :obj:`Exception`)):
-            True / False if cert was valid.
-            Exception that was thrown if cert not valid, or None if successfull.
-
-    """
-    kwargs.setdefault("timeout", timeout)
-    kwargs.setdefault("url", build_url(host=host, port=port))
-    try:
-        requests.get(**kwargs)
-        return (True, None)
-    except requests.exceptions.SSLError as exc:
-        return (False, exc)
 
 
 @contextmanager
@@ -199,40 +167,6 @@ class CertStore(object):
         return cls(x509=x509)
 
     @classmethod
-    def from_response(cls, response):
-        """Make instance of this cls using a requests.Response object.
-
-        Examples:
-            >>> enable_urllib3_patch()
-            >>> response = requests.get("https://cyborg", verify=False)
-            >>> cert = CertStore.from_response(response)
-            >>> print(cert)
-
-        Notes:
-            This relies on the fact that :func:`enable_urllib3_patch` has
-            been used to add the SSL attributes to the :obj:`requests.Response`.raw
-            object.
-
-        Args:
-            response (:obj:`requests.Response`):
-                response object to get raw.peer_cert.
-
-        Returns:
-            (:obj:`CertStore`)
-
-        """
-        attr = "peer_cert"
-        x509 = getattr(response.raw, attr, None)
-        if not x509:
-            error = (
-                "Response missing attribute 'raw.{a}', not issued using "
-                "enable_urllib3_patch"
-            )
-            error = error.format(a=attr)
-            raise CertHumanError(error)
-        return cls(x509=x509)
-
-    @classmethod
     def from_auto(cls, obj):
         """Make instance of this cls from a number of types.
 
@@ -254,8 +188,6 @@ class CertStore(object):
                 return cls(asn1_to_x509(obj))
             elif isinstance(obj, bytes):
                 return cls(der_to_x509(obj))
-            elif isinstance(obj, requests.Response):
-                return cls.from_response(obj)
             else:
                 error = "Invalid type supplied {t}"
                 error = error.format(t=type(obj))
@@ -353,31 +285,6 @@ class CertStore(object):
             mkparent=mkparent,
             protect=protect,
         )
-
-    def test(self, host, port=443, **kwargs):
-        """Test that a cert is valid on a site.
-
-        Args:
-            host (:obj:`str`):
-                hostname to connect to.
-                can be any of: "scheme://host:port", "scheme://host", or "host".
-            port (:obj:`str`, optional):
-                port to connect to on host.
-                If no :PORT in host, this will be added to host.
-                Defaults to: 443
-            kwargs: passed thru to requests.get()
-
-        Returns:
-            (:obj:`tuple` of (:obj:`bool`, :obj:`Exception`)):
-                True / False if cert was valid.
-                Exception that was thrown if cert not valid, or None if successful.
-
-        """
-        with tempfile.NamedTemporaryFile(suffix=".pem", mode="w+t") as fh:
-            fh.write(self.pem)
-            fh.seek(0)
-            ret = test_cert(host, verify=fh.name, port=443, timeout=5, **kwargs)
-        return ret
 
     @property
     def issuer(self):
@@ -1004,39 +911,6 @@ class CertChainStore(object):
             return cls(x509=ssl_sock.get_peer_cert_chain())
 
     @classmethod
-    def from_response(cls, response):
-        """Make instance of this cls using a requests.Response.raw object.
-
-        Examples:
-            >>> enable_urllib3_patch()
-            >>> response = requests.get("https://cyborg", verify=False)
-            >>> cert_chain = CertChainStore.from_response(response)
-            >>> print(cert_chain)
-
-        Notes:
-            This relies on the fact that :func:`enable_urllib3_patch` has been used to
-            add the SSL attributes to the :obj:`requests.Response`.raw object.
-
-        Args:
-            response (:obj:`requests.Response`):
-                response object to get raw.peer_cert_chain from.
-
-        Returns:
-            (:obj:`CertChainStore`)
-
-        """
-        attr = "peer_cert_chain"
-        x509 = getattr(response.raw, attr, None)
-        if not x509:
-            error = (
-                "Response missing attribute 'raw.{a}', not issued using "
-                "enable_urllib3_patch"
-            )
-            error = error.format(a=attr)
-            raise CertHumanError(error)
-        return cls(x509=x509)
-
-    @classmethod
     def from_pem(cls, pem):
         """Make instance of this cls from a string containing multiple PEM certs.
 
@@ -1254,9 +1128,6 @@ def hexify(obj, space=False, every=2, zerofill=True):
         space (:obj:`bool`, optional):
             Space the output string using join.
             Defaults to: False.
-        join (:obj:`str`, optional):
-            Rejoining str.
-            Defaults to: " ".
         every (:obj:`str`, optional):
             The number of characters to split on.
             Defaults to: 2.
@@ -1273,7 +1144,7 @@ def hexify(obj, space=False, every=2, zerofill=True):
     if len(obj) % 2 and zerofill:
         obj = obj.zfill(len(obj) + 1)
     if space:
-        obj = [obj[i : i + every] for i in range(0, len(obj), every)]  # noqa: E203
+        obj = [obj[i: i + every] for i in range(0, len(obj), every)]  # noqa: E203
         obj = " ".join(obj)
     return obj
 
