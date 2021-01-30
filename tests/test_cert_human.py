@@ -5,70 +5,22 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import cert_human
-import json
 import datetime
-import requests
-import urllib3
-import pytest
+import json
 import stat
 import tempfile
+
 import OpenSSL
-import six
 import asn1crypto
+import pytest
+import requests
+import six
+
+import cert_human
 
 
 class TestUrllibPatching(object):
     """Pass."""
-
-    def test_urllib3_classes(self):
-        """Pass."""
-        assert issubclass(  # nosec
-            cert_human.HTTPSConnectionWithCertCls, urllib3.connection.HTTPSConnection
-        )
-        assert issubclass(  # nosec
-            cert_human.ResponseWithCertCls, urllib3.response.HTTPResponse
-        )
-
-    def test_enable_urllib3_patch(self, httpbin_secure, httpbin_cert):
-        """Pass."""
-        cert_human.enable_urllib3_patch()
-        r = requests.get(httpbin_secure(), verify=httpbin_cert)
-        assert getattr(r.raw, "peer_cert", None)  # nosec
-        assert getattr(r.raw, "peer_cert_chain", None)  # nosec
-        assert getattr(r.raw, "peer_cert_dict", None)  # nosec
-        cert_human.disable_urllib3_patch()
-
-    def test_disable_urllib3_patch(self, httpbin_secure, httpbin_cert):
-        """Pass."""
-        cert_human.disable_urllib3_patch()
-        r = requests.get(httpbin_secure(), verify=httpbin_cert)
-        assert not getattr(r.raw, "peer_cert", None)  # nosec
-        assert not getattr(r.raw, "peer_cert_chain", None)  # nosec
-        assert not getattr(r.raw, "peer_cert_dict", None)  # nosec
-
-    def test_urllib3_patch(self, httpbin_secure, httpbin_cert):
-        """Pass."""
-        with cert_human.urllib3_patch():
-            r = requests.get(httpbin_secure(), verify=httpbin_cert)
-            assert getattr(r.raw, "peer_cert", None)  # nosec
-            assert getattr(r.raw, "peer_cert_chain", None)  # nosec
-            assert getattr(r.raw, "peer_cert_dict", None)  # nosec
-        r = requests.get(httpbin_secure(), verify=httpbin_cert)
-        assert not getattr(r.raw, "peer_cert", None)  # nosec
-        assert not getattr(r.raw, "peer_cert_chain", None)  # nosec
-        assert not getattr(r.raw, "peer_cert_dict", None)  # nosec
-
-    def test_using_urllib3_patch(self):
-        """Pass."""
-        with cert_human.urllib3_patch():
-            assert cert_human.using_urllib3_patch()  # nosec
-        assert not cert_human.using_urllib3_patch()  # nosec
-
-    def test_check_urllib3_patch(self):
-        """Pass."""
-        with cert_human.urllib3_patch():
-            cert_human.check_urllib3_patch()
 
     def test_not_check_urllib3_patch(self):
         """Pass."""
@@ -108,7 +60,7 @@ class TestGetCerts(object):
         assert subj_cn == (b"CN", b"example.com")  # nosec
 
     def test_get_response_invalid_verify(
-        self, httpbin_secure, httpbin_cert, other_cert
+            self, httpbin_secure, httpbin_cert, other_cert
     ):
         """Pass."""
         with pytest.raises(requests.exceptions.SSLError):
@@ -599,7 +551,7 @@ class TestCertStore(object):
         store = cert_human.CertStore.from_path(example_cert)
         dump = json.loads(store.dump_json)
         assert (  # nosec
-            '"subject": {\n    "common_name": "example.com"\n' in store.dump_json
+                '"subject": {\n    "common_name": "example.com"\n' in store.dump_json
         )
         assert isinstance(dump, dict)  # nosec
 

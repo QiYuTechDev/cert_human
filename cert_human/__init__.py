@@ -8,153 +8,15 @@ import pathlib
 import re
 import socket
 import tempfile
-import warnings
 from contextlib import contextmanager
 from textwrap import wrap
 
 import OpenSSL
 import asn1crypto.x509
 import requests
-import urllib3
 
 PEM_TYPE = OpenSSL.crypto.FILETYPE_PEM
 ASN1_TYPE = OpenSSL.crypto.FILETYPE_ASN1
-
-HTTPSConnectionPool = urllib3.connectionpool.HTTPSConnectionPool
-ConnectionCls = HTTPSConnectionPool.ConnectionCls
-ResponseCls = HTTPSConnectionPool.ResponseCls
-
-
-class HTTPSConnectionWithCertCls(ConnectionCls):  # noqa: D101
-    def connect(self):  # noqa: D102
-        super(HTTPSConnectionWithCertCls, self).connect()
-        self._set_cert_attrs()
-
-    def _set_cert_attrs(self):
-        """Add cert info from the socket connection to a HTTPSConnection object.
-
-        Adds the following attributes:
-
-          - peer_cert: x509 certificate of the server
-          - peer_cert_chain: x509 certificate chain of the server
-          - peer_cert_dict: dictionary containing commonName and subjectAltName
-        """
-        sock = getattr(self, "sock", None)
-        conn = getattr(sock, "connection", None)
-        conn_gpc = getattr(conn, "get_peer_certificate", None)
-        conn_gpcc = getattr(conn, "get_peer_cert_chain", None)
-        gpc = getattr(sock, "getpeercert", None)
-        self.peer_cert = conn_gpc() if conn_gpc else None
-        self.peer_cert_chain = conn_gpcc() if conn_gpcc else None
-        self.peer_cert_dict = gpc() if gpc else None
-
-
-class ResponseWithCertCls(ResponseCls):  # noqa: D101
-    def __init__(self, *args, **kwargs):  # noqa: D107
-        super(ResponseWithCertCls, self).__init__(*args, **kwargs)
-        self._set_cert_attrs()
-
-    def _set_cert_attrs(self):
-        """Add cert info from a HTTPSConnection object to a HTTPSResponse object.
-
-        This allows accessing the attributes in a HTTPSConnectionWithCertCls
-        from a requests.Response.raw object like so:
-
-          - :obj:`requests.Response`.raw.peer_cert
-          - :obj:`requests.Response`.raw.peer_cert_chain
-          - :obj:`requests.Response`.raw.peer_cert_dict
-        """
-        conn = getattr(self, "_connection", None)
-        self.peer_cert = getattr(conn, "peer_cert", None)
-        self.peer_cert_chain = getattr(conn, "peer_cert_chain", None)
-        self.peer_cert_dict = getattr(conn, "peer_cert_dict", None)
-
-
-def enable_urllib3_patch():
-    """Patch HTTPSConnectionPool to use the WithCert Connect/Response classes.
-
-    Examples:
-        Make a request using :obj:`requests` and patch urllib3 until
-        you want to unpatch it:
-
-        >>> enable_urllib3_patch()
-        >>> response1 = requests.get("https://www.google.com")
-        >>> # self-signed, don't verify
-        >>> response2 = requests.get("https://cyborg", verify=False)
-        >>> print(response1.raw.peer_cert.get_subject().get_components())
-        >>> print(response2.raw.peer_cert.get_subject().get_components())
-        >>> # optionally disable the urllib3 patch once you no longer need
-        >>> # to make requests with the cert attributes attached
-        >>> disable_urllib3_patch()
-
-    Notes:
-        Modifies :obj:`urllib3.connectionpool.HTTPSConnectionPool` attributes
-        :attr:`urllib3.connectionpool.HTTPSConnectionPool.ConnectionCls` and
-        :attr:`urllib3.connectionpool.HTTPSConnectionPool.ResponseCls`
-        to the WithCert classes.
-
-    """
-    HTTPSConnectionPool.ConnectionCls = HTTPSConnectionWithCertCls
-    HTTPSConnectionPool.ResponseCls = ResponseWithCertCls
-
-
-def disable_urllib3_patch():
-    """Unpatch HTTPSConnectionPool to use the default Connect/Response classes.
-
-    Notes:
-        Modifies :obj:`urllib3.connectionpool.HTTPSConnectionPool` attributes
-        :attr:`urllib3.connectionpool.HTTPSConnectionPool.ConnectionCls` and
-        :attr:`urllib3.connectionpool.HTTPSConnectionPool.ResponseCls` back to
-        original classes.
-
-    """
-    HTTPSConnectionPool.ConnectionCls = ConnectionCls
-    HTTPSConnectionPool.ResponseCls = ResponseCls
-
-
-@contextmanager
-def urllib3_patch():
-    """Context manager to enable/disable cert patch.
-
-    Examples:
-        Make a request using :obj:`requests` using this context manager to
-        patch urllib3:
-
-        >>> import requests
-        >>> with urllib3_patch():
-        ...   response = requests.get("https://www.google.com")
-        ...
-        >>> print(response.raw.peer_cert.get_subject().get_components())
-
-    """
-    enable_urllib3_patch()
-    yield
-    disable_urllib3_patch()
-
-
-def using_urllib3_patch():
-    """Check if urllib3 is patched with the WithCert classes.
-
-    Returns:
-        (:obj:`bool`)
-
-    """
-    connect = HTTPSConnectionPool.ConnectionCls == HTTPSConnectionWithCertCls
-    response = HTTPSConnectionPool.ResponseCls == ResponseWithCertCls
-    return all([connect, response])
-
-
-def check_urllib3_patch():
-    """Throw exception if urllib3 is not patched with the WithCert classes.
-
-    Raises:
-        (:obj:`CertHumanError`): if using_urllib3_patch() returns False.
-
-    """
-    if not using_urllib3_patch():
-        error = "Not using WithCert classes in {o}, use enable_urllib3_patch()"
-        error = error.format(o=HTTPSConnectionPool)
-        raise CertHumanError(error)
 
 
 def build_url(host, port=443, scheme="https://"):
@@ -212,56 +74,6 @@ def test_cert(host, port=443, timeout=5, **kwargs):
         return (False, exc)
 
 
-def get_response(host, port=443, **kwargs):
-    """Get a requests.Response object with cert attributes.
-
-    Examples:
-        Make a request to a site that has a valid cert:
-
-        >>> response = get_response(host="www.google.com")
-        >>> print(response.raw.peer_cert.get_subject().get_components())
-        >>> print(response.raw.peer_cert_chain)
-        >>> print(response.raw.peer_cert_dict)
-
-        Make a request to a site that has an invalid cert (self-signed):
-
-        >>> response = get_response(host="cyborg")
-        >>> print(response.raw.peer_cert.get_subject().get_components())
-
-    Notes:
-        This is to fetch a requests.Response object that has cert attributes.
-
-        * Uses a context manager to disable warnings about SSL cert validation.
-        * Uses a context manager to patch urllib3 to add SSL cert attributes
-          to the HTTPSResponse object, which is then accessible via the
-          :obj:`requests.Response`.raw object.
-        * Makes a request to a server using :func:`requests.get`
-
-    Args:
-        host (:obj:`str`):
-            hostname to connect to.
-            can be any of: "scheme://host:port", "scheme://host", or "host".
-        port (:obj:`str`, optional):
-            port to connect to on host.
-            If no :PORT in host, this will be added to host.
-            Defaults to: 443
-        kwargs: passed thru to requests.get()
-
-    Returns:
-        (:obj:`requests.Response`)
-
-    """
-    kwargs.setdefault("timeout", 5)
-    kwargs.setdefault("verify", False)
-    kwargs.setdefault("url", build_url(host=host, port=port))
-
-    with warnings.catch_warnings():
-        with urllib3_patch():
-            warnings.filterwarnings("ignore")
-            response = requests.get(**kwargs)
-    return response
-
-
 @contextmanager
 def ssl_socket(host, port=443, *args, **kwargs):
     """Context manager to create an SSL socket.
@@ -270,6 +82,7 @@ def ssl_socket(host, port=443, *args, **kwargs):
         Use sockets and OpenSSL to make a request using this context manager:
 
         >>> with ssl_socket(host="cyborg", port=443) as sock:
+        ...   assert isinstance(sock, OpenSSL.SSL.Connection)
         ...   cert = sock.get_peer_certificate()
         ...   cert_chain = sock.get_peer_cert_chain()
         ...
@@ -384,28 +197,6 @@ class CertStore(object):
         with ssl_socket(host=host, port=port) as ssl_sock:
             x509 = ssl_sock.get_peer_certificate()
         return cls(x509=x509)
-
-    @classmethod
-    def from_request(cls, host, port=443):
-        """Make instance of this cls using requests module to get the cert.
-
-        Examples:
-            >>> cert = CertStore.from_request("cyborg")
-            >>> print(cert)
-
-        Args:
-            host (:obj:`str`):
-                hostname to connect to.
-            port (:obj:`str`, optional):
-                port to connect to on host.
-                Defaults to: 443.
-
-        Returns:
-            (:obj:`CertStore`)
-
-        """
-        response = get_response(host=host, port=port)
-        return cls(x509=response.raw.peer_cert)
 
     @classmethod
     def from_response(cls, response):
@@ -534,8 +325,6 @@ class CertStore(object):
         Examples:
             >>> # get a cert using sockets:
             >>> cert = CertStore.from_socket("cyborg")
-            >>> # or, get a cert using requests:
-            >>> cert = CertStore.from_request("cyborg")
 
             >>> # ideally, do some kind of validation with the user here
             >>> # i.e. use ``print(cert.dump_str)`` to show the same
@@ -1213,31 +1002,6 @@ class CertChainStore(object):
         """
         with ssl_socket(host=host, port=port) as ssl_sock:
             return cls(x509=ssl_sock.get_peer_cert_chain())
-
-    @classmethod
-    def from_request(cls, host, port=443):
-        """Make instance of this cls using requests module to get the cert chain.
-
-        Examples:
-            >>> cert_chain = CertChainStore.from_request("cyborg")
-            >>> print(cert_chain)
-
-        Args:
-            host (:obj:`str`):
-                hostname to connect to.
-            port (:obj:`str`, optional):
-                port to connect to on host.
-                Defaults to: 443.
-            timeout (:obj:`str`, optional):
-                Timeout for connect/response.
-                Defaults to: 5.
-
-        Returns:
-            (:obj:`CertChainStore`)
-
-        """
-        response = get_response(host=host, port=port)
-        return cls(x509=response.raw.peer_cert_chain)
 
     @classmethod
     def from_response(cls, response):
