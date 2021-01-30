@@ -49,7 +49,7 @@ def main(cli_args):
         host=cli_args.host, port=cli_args.port
     )
 
-    print(store_obj.dump_json_friendly)
+    print(store_obj.dump_json)
 
 
 if __name__ == "__main__":

@@ -591,6 +591,8 @@ class CertStore(object):
         for ext in self._extensions:
             name, obj = ext
             obj_str = self._extension_str(obj)
+            if isinstance(name, bytes):
+                name = name.decode()
             ret[name] = obj_str
         return ret
 
@@ -1140,7 +1142,7 @@ def hexify(obj, space=False, every=2, zerofill=True):
     if isinstance(obj, bytes):
         obj = obj.decode()
     if space:
-        obj = [obj[i: i + every] for i in range(0, len(obj), every)]  # noqa: E203
+        obj = [obj[i : i + every] for i in range(0, len(obj), every)]  # noqa: E203
         obj = " ".join(obj)
     return obj
 
