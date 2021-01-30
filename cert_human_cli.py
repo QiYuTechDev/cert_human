@@ -35,47 +35,6 @@ def cli(argv):
         type=int,
         help="Port on host to connect to",
     )
-    parser.add_argument(
-        "--chain",
-        dest="chain",
-        action="store_true",
-        default=False,
-        required=False,
-        help="Print/write the cert chain instead of the cert.",
-    )
-    parser.add_argument(
-        "--print_mode",
-        dest="print_mode",
-        action="store",
-        default="info",
-        required=False,
-        choices=["info", "key", "extensions", "all"],
-        help="When no --write specified, print this type of information for the cert.",
-    )
-    parser.add_argument(
-        "--write",
-        dest="write",
-        action="store",
-        default="",
-        required=False,
-        help="File to write cert/cert chain to",
-    )
-    parser.add_argument(
-        "--overwrite",
-        dest="overwrite",
-        action="store_true",
-        default=False,
-        required=False,
-        help="When writing to --write and file exists, overwrite.",
-    )
-    parser.add_argument(
-        "--verify",
-        dest="verify",
-        action="store",
-        default="",
-        required=False,
-        help="PEM file to verify host, empty will disable verify, for --method requests.",
-    )
     return parser.parse_args(argv)
 
 
@@ -86,31 +45,11 @@ def main(cli_args):
         cli_args (:obj:`argparse.Namespace`): Parsed args from sys.argv or list.
 
     """
-    if cli_args.chain:
-        store_cls = cert_human_py3.CertChainStore
-        store_target = "cert chain"
-    else:
-        store_cls = cert_human_py3.CertStore
-        store_target = "cert"
-
-    store_obj = store_cls.from_socket(
+    store_obj = cert_human_py3.CertChainStore.from_socket(
         host=cli_args.host, port=cli_args.port
     )
 
-    if cli_args.write:
-        store_obj.to_disk(path=cli_args.write, overwrite=cli_args.overwrite)
-        m = "** Wrote {t} in pem format to: '{p}'"
-        m = m.format(t=store_target, p=cli_args.write)
-        print(m)
-    else:
-        print_map = {
-            "info": "dump_str_info",
-            "key": "dump_str_key",
-            "all": "dump_str",
-            "extensions": "dump_str_exts",
-        }
-        mode_out = getattr(store_obj, print_map[cli_args.print_mode])
-        print(mode_out)
+    print(store_obj.dump_json_friendly)
 
 
 if __name__ == "__main__":

@@ -883,7 +883,7 @@ class CertChainStore(object):
             self._certs.append(CertStore.from_auto(value))
 
     @classmethod
-    def from_socket(cls, host, port=443):
+    def from_socket(cls, host, port=443) -> "CertChainStore":
         """Make instance of this cls using socket module to get the cert chain.
 
         Examples:
@@ -1137,6 +1137,8 @@ def hexify(obj, space=False, every=2, zerofill=True):
     obj = obj.upper()
     if len(obj) % 2 and zerofill:
         obj = obj.zfill(len(obj) + 1)
+    if isinstance(obj, bytes):
+        obj = obj.decode()
     if space:
         obj = [obj[i: i + every] for i in range(0, len(obj), every)]  # noqa: E203
         obj = " ".join(obj)
