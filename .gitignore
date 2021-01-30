@@ -109,3 +109,6 @@ venv.bak/
 
 # PYCharm
 .idea
+
+# for Poetry
+poetry.lock

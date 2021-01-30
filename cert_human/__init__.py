@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """Utilities for getting and processing certificates."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import asn1crypto.x509
 import binascii
@@ -26,9 +22,6 @@ if six.PY2:
 else:
     import pathlib
 
-from .__version__ import __title__, __description__, __url__, __version__  # noqa
-from .__version__ import __author__, __author_email__, __license__  # noqa
-from .__version__ import __copyright__, __project__  # noqa
 
 PEM_TYPE = OpenSSL.crypto.FILETYPE_PEM
 ASN1_TYPE = OpenSSL.crypto.FILETYPE_ASN1
