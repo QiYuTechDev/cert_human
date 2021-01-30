@@ -31,3 +31,10 @@ To install Cert Human Py3 version, use pip / poetry:
 ``` {.sourceCode .bash}
 $ pip install cert_human_py3
 ```
+
+Warning
+------------------
+
+    You should be migrate to Python std lib once https://github.com/python/cpython/pull/17938 is merged.
+
+[stackoverflow](https://stackoverflow.com/questions/19145097/getting-certificate-chain-with-python-3-3-ssl-module)
