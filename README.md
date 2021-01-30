@@ -14,11 +14,16 @@ Description
 
 Somebody said something about over-engineering. So I obviously had to chime in.
 
-No, but seriously, I was in the midst of rewriting [another project of mine](https://github.com/tanium/pytan), and I wanted to incorporate a method to get an SSL certificate from a server, show the user the same kind of information as you'd see in a browser, prompt them for validity, then write it to disk for use in all [requests](http://docs.python-requests.org/en/master/) to a server.
+No, but seriously, I was in the midst of rewriting [another project of mine](https://github.com/tanium/pytan), and I
+wanted to incorporate a method to get an SSL certificate from a server, show the user the same kind of information as
+you'd see in a browser, prompt them for validity, then write it to disk for use in
+all [requests](http://docs.python-requests.org/en/master/) to a server.
 
-I was unable to find any great / easy ways that incorporated all of these concepts into one neat thing. So I made a thing.
+I was unable to find any great / easy ways that incorporated all of these concepts into one neat thing. So I made a
+thing.
 
-Originally this was based off of yet another lovely over-engineered solution in [get-ca-py](https://github.com/neozenith/get-ca-py) by [Josh Peak](https://github.com/neozenith).
+Originally this was based off of yet another lovely over-engineered solution
+in [get-ca-py](https://github.com/neozenith/get-ca-py) by [Josh Peak](https://github.com/neozenith).
 
 
 Installation
@@ -29,7 +34,6 @@ To install Cert Human, use pip / pipenv:
 ``` {.sourceCode .bash}
 $ pip install cert_human
 ```
-
 
 Documentation
 -------------
