@@ -5,7 +5,7 @@
 import argparse
 import sys
 
-import cert_human
+import cert_human_py3
 
 
 def cli(argv):
@@ -87,10 +87,10 @@ def main(cli_args):
 
     """
     if cli_args.chain:
-        store_cls = cert_human.CertChainStore
+        store_cls = cert_human_py3.CertChainStore
         store_target = "cert chain"
     else:
-        store_cls = cert_human.CertStore
+        store_cls = cert_human_py3.CertStore
         store_target = "cert"
 
     store_obj = store_cls.from_socket(

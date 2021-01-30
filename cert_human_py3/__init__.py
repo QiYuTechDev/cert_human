@@ -12,7 +12,6 @@ from textwrap import wrap
 
 import OpenSSL
 import asn1crypto.x509
-import requests
 
 PEM_TYPE = OpenSSL.crypto.FILETYPE_PEM
 ASN1_TYPE = OpenSSL.crypto.FILETYPE_ASN1
@@ -172,7 +171,7 @@ class CertStore(object):
 
         Args:
             obj (:obj:`str` or :obj:`bytes` or :obj:`OpenSSL.crypto.X509` or
-                :obj:`X509.Certificate` or :obj:`requests.Response`):
+                :obj:`X509.Certificate`):
                 Object to create CertStore.
 
         Returns:
@@ -264,11 +263,6 @@ class CertStore(object):
 
             >>> # then write to disk:
             >>> cert_path = cert.to_path("~/cyborg.pem")
-
-            >>> # use requests with the newly written cert
-            >>> # no SSL warnings or SSL validation errors happen
-            >>> # even though it's self signed:
-            >>> response = requests.get("https://cyborg", verify=cert_path)
 
         Args:
             path (:obj:`str` or :obj:`pathlib.Path`):

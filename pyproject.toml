@@ -1,14 +1,12 @@
 [tool.poetry]
-name = "cert_human"
-version = "0.1.0"
+name = "cert_human_py3"
+version = "1.0.0"
 description = ""
 authors = ["dev <dev@qiyutech.tech>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-
-requests = ">=2,<3"
 
 pyOpenSSL = ">=20,<21"
 
