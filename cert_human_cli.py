@@ -1,14 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """Command line interface to request a URL and get the server cert or cert chain."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import argparse
-import cert_human
 import sys
+
+import cert_human
 
 
 def cli(argv):

@@ -1,27 +1,21 @@
 # -*- coding: utf-8 -*-
 """Utilities for getting and processing certificates."""
 
-import asn1crypto.x509
 import binascii
-import json
 import inspect
-import requests
+import json
+import pathlib
 import re
-import six
 import socket
 import tempfile
 import warnings
-
-from textwrap import wrap
 from contextlib import contextmanager
-import urllib3
+from textwrap import wrap
+
 import OpenSSL
-
-if six.PY2:
-    import pathlib2 as pathlib  # pragma: no cover
-else:
-    import pathlib
-
+import asn1crypto.x509
+import requests
+import urllib3
 
 PEM_TYPE = OpenSSL.crypto.FILETYPE_PEM
 ASN1_TYPE = OpenSSL.crypto.FILETYPE_ASN1
@@ -461,11 +455,8 @@ class CertStore(object):
 
         """
         try:
-            if isinstance(obj, six.string_types):
-                try:
-                    return cls(x509=pem_to_x509(obj))
-                except Exception:  # py2 hackage
-                    return cls(der_to_x509(obj))
+            if isinstance(obj, str):
+                return cls(x509=pem_to_x509(obj))
             elif isinstance(obj, OpenSSL.crypto.X509):
                 return cls(obj)
             elif isinstance(obj, asn1crypto.x509.Certificate):
@@ -1120,7 +1111,7 @@ class CertStore(object):
         exts = [
             self.x509.get_extension(i) for i in range(self.x509.get_extension_count())
         ]
-        return [[six.ensure_text(s=e.get_short_name()), e] for e in exts]
+        return [[e.get_short_name(), e] for e in exts]
 
     @property
     def _public_key_native(self):
@@ -1510,15 +1501,15 @@ def hexify(obj, space=False, every=2, zerofill=True):
         (:obj:`str`)
 
     """
-    if isinstance(obj, six.string_types) or isinstance(obj, six.binary_type):
+    if isinstance(obj, str) or isinstance(obj, bytes):
         obj = binascii.hexlify(obj)
-    if isinstance(obj, six.integer_types):
+    if isinstance(obj, int):
         obj = format(obj, "X")
-    obj = six.ensure_text(obj).upper()
+    obj = obj.upper()
     if len(obj) % 2 and zerofill:
         obj = obj.zfill(len(obj) + 1)
     if space:
-        obj = [obj[i : i + every] for i in range(0, len(obj), every)]  # noqa: E203
+        obj = [obj[i: i + every] for i in range(0, len(obj), every)]  # noqa: E203
         obj = " ".join(obj)
     return obj
 
@@ -1765,7 +1756,7 @@ def x509_to_pem(x509):
 
     """
     pem = OpenSSL.crypto.dump_certificate(PEM_TYPE, x509)
-    return six.ensure_text(pem)
+    return pem
 
 
 class CertHumanError(Exception):
