@@ -36,15 +36,6 @@ def cli(argv):
         help="Port on host to connect to",
     )
     parser.add_argument(
-        "--method",
-        dest="method",
-        action="store",
-        default="requests",
-        required=False,
-        choices=["requests", "socket"],
-        help="Use requests.get a SSL socket to get cert or cert chain.",
-    )
-    parser.add_argument(
         "--chain",
         dest="chain",
         action="store_true",
