@@ -1509,7 +1509,7 @@ def hexify(obj, space=False, every=2, zerofill=True):
     if len(obj) % 2 and zerofill:
         obj = obj.zfill(len(obj) + 1)
     if space:
-        obj = [obj[i: i + every] for i in range(0, len(obj), every)]  # noqa: E203
+        obj = [obj[i : i + every] for i in range(0, len(obj), every)]  # noqa: E203
         obj = " ".join(obj)
     return obj
 

@@ -102,11 +102,11 @@ def main(cli_args):
         store_cls = cert_human.CertStore
         store_target = "cert"
 
+    store_obj = None
     if cli_args.method == "requests":
-        verify = False if not cli_args.verify else cli_args.verify
         try:
-            store_obj = store_cls.new_from_host_requests(
-                host=cli_args.host, port=cli_args.port, verify=verify
+            store_obj = store_cls.from_request(
+                host=cli_args.host, port=cli_args.port
             )
         except cert_human.requests.exceptions.SSLError as exc:
             exc = "\n  ".join([x.strip() for x in format(exc).split(":")])
@@ -114,11 +114,11 @@ def main(cli_args):
             print(m)
             store_obj = None
     elif cli_args.method == "socket":
-        store_obj = store_cls.new_from_host_socket(
+        store_obj = store_cls.from_socket(
             host=cli_args.host, port=cli_args.port
         )
 
-    if store_obj:
+    if store_obj is not None:
         if cli_args.write:
             store_obj.to_disk(path=cli_args.write, overwrite=cli_args.overwrite)
             m = "** Wrote {t} in pem format to: '{p}'"
