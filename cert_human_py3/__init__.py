@@ -67,11 +67,10 @@ def ssl_socket(host, port=443, *args, **kwargs):
         (:obj:`OpenSSL.SSL.Connection`)
 
     """
-    method = OpenSSL.SSL.TLSv1_METHOD  # Use TLS Method
-    ssl_context = OpenSSL.SSL.Context(method)
+    ssl_context = OpenSSL.SSL.Context(OpenSSL.SSL.TLSv1_2_METHOD)
 
-    options = OpenSSL.SSL.OP_NO_SSLv2  # Don't accept SSLv2
-    ssl_context.set_options(options)
+    ssl_context.set_options(OpenSSL.SSL.OP_NO_SSLv2)
+    ssl_context.set_options(OpenSSL.SSL.OP_NO_SSLv3)
 
     sock = socket.socket(*args, **kwargs)
     ssl_sock = OpenSSL.SSL.Connection(ssl_context, sock)
