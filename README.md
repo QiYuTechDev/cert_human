@@ -1,6 +1,6 @@
-[![PyPI version](https://badge.fury.io/py/cert-human-v3.svg)](https://badge.fury.io/py/cert-human-v3)
+[![PyPI version](https://badge.fury.io/py/cert-human-py3.svg)](https://badge.fury.io/py/cert-human-py3)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
-[![Python Versions](https://img.shields.io/pypi/pyversions/cert-human-v3.svg)](https://pypi.org/project/cert-human-v3/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/cert-human-py3.svg)](https://pypi.org/project/cert-human-py3/)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 Cert Human: SSL Certificates for Humans
