@@ -29,13 +29,8 @@ in [get-ca-py](https://github.com/neozenith/get-ca-py) by [Josh Peak](https://gi
 Installation
 ------------
 
-To install Cert Human, use pip / pipenv:
+To install Cert Human Py3 version, use pip / poetry:
 
 ``` {.sourceCode .bash}
-$ pip install cert_human
+$ pip install cert_human_py3
 ```
-
-Documentation
--------------
-
-Available [here](https://cert-human.readthedocs.io/en/latest/)
